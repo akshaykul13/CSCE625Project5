@@ -12,6 +12,7 @@ public class PropositionalSatisfiabillitySolver {
 	private static int numberOfClauses = 0;
 	private static int count = 0;
 	private static int MODE;
+	private static boolean MINIMALISTIC_ALGORITHM = false;
 	
 	private static final int ONLY_BACKTRACKING = 1;
 	private static final int BACKTRACKING_WITH_UNIT_CLAUSE = 2;
@@ -21,16 +22,36 @@ public class PropositionalSatisfiabillitySolver {
 		knowledgeBase = new ArrayList<Clause>();
 		ArrayList<String> symbols = new ArrayList<String>();
 		HashMap<String, Boolean> model = new HashMap<String, Boolean>();
-		System.out.println("Enter the name of the knowledge base file:");
-		Scanner in = new Scanner(System.in);		
-		String fileName = in.nextLine();
-		System.out.println("Enter the mode to run the propositional satisfiability solver:");
-		System.out.println("1. Only backtracking");
-		System.out.println("2. Backtracking with unit clause heuristic");
-		System.out.println("3. Backtracking with unit and pure heuristics");
-		MODE = in.nextInt();
+		String fileName = args[0];		
+		MODE = Integer.parseInt(args[1]);
+		if(MODE == 1) {
+			System.out.println("Only Backtracking");
+		} else if(MODE == 2) {
+			System.out.println("Backtracking with unit clause heuristic");
+		} else if(MODE == 3) {
+			System.out.println("Backtracking with unit and pure clause heuristics");
+		} else {
+			System.out.println("Invalid mode");
+			System.exit(-1);
+		}
+		if(args.length == 3) {
+			if(args[2].equals("-m")) {
+				MINIMALISTIC_ALGORITHM = true;
+				System.out.println("Minimalistic mode");
+			}
+		}
+		ArrayList<String> facts = new ArrayList<String>();
+		Scanner in = new Scanner(System.in);			
+		System.out.println("Enter additional propositional facts:");
+		while(in.hasNextLine()) {
+			String fact = in.nextLine();
+			if(fact.isEmpty()) {
+				break;
+			}
+			facts.add(fact);
+		}
 		in.close();
-		extractKnowledgeBase(fileName, symbols);
+		extractKnowledgeBase(fileName, symbols, facts);
 		Collections.sort(symbols);
 		DPLL(symbols, model);		
 	}
@@ -39,6 +60,7 @@ public class PropositionalSatisfiabillitySolver {
 		System.out.println("DPLL on " + model.toString());
 		count++;
 		if(allClausesAreTrue(model)) {
+			System.out.println();
 			ArrayList<String> keys = new ArrayList<String>(model.keySet());		
 			Collections.sort(keys);
 			for (String key : keys) {
@@ -79,10 +101,10 @@ public class PropositionalSatisfiabillitySolver {
 		ArrayList<String> newSymbols = cloneList(symbols);
 		newSymbols.remove(0);
 		System.out.println("Assigning symbol - " + symbolToBeAssigned);
-		newModel.put(symbolToBeAssigned, false);		
+		newModel.put(symbolToBeAssigned, !MINIMALISTIC_ALGORITHM);		
 		boolean flag = DPLL(newSymbols, newModel);
 		if(!flag) {
-			newModel.put(symbolToBeAssigned, true);
+			newModel.put(symbolToBeAssigned, MINIMALISTIC_ALGORITHM);
 			flag = DPLL(newSymbols, newModel);
 		}				
 		return flag;
@@ -192,7 +214,7 @@ public class PropositionalSatisfiabillitySolver {
 		return false;
 	}
 
-	private static void extractKnowledgeBase(String fileName, ArrayList<String> symbols) {
+	private static void extractKnowledgeBase(String fileName, ArrayList<String> symbols, ArrayList<String> facts) {
 		File knowledgeBaseFile = new File(fileName);
 		try {
 			Scanner in = new Scanner(knowledgeBaseFile);
@@ -207,6 +229,13 @@ public class PropositionalSatisfiabillitySolver {
 				numberOfClauses++;
 			}
 			in.close();
+			for (String fact : facts) {
+				String clauseText = fact;				
+				Clause clause = new Clause(clauseText, numberOfClauses);
+				knowledgeBase.add(clause);
+				extractSymbols(clause, symbols);
+				numberOfClauses++;
+			}			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.out.println("Place the input file in the folder which contains src and bin if running from eclipse");
