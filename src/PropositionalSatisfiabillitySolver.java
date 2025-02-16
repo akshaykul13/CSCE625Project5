@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
 
-
+// CSCE 625 Project 5
 public class PropositionalSatisfiabillitySolver {
 	
 	private static ArrayList<Clause> knowledgeBase;
